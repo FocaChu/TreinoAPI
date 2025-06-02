@@ -10,14 +10,17 @@ namespace TreinoAPI.Controllers
     {
         public static List<FilmeModel> filmes = new List<FilmeModel>
         {
-            new FilmeModel { Id = 1, Titulo = "Filme 1"},
-            new FilmeModel { Id = 2, Titulo = "Filme 2"}
+            new FilmeModel { Id = 1, Titulo = "O Senhor dos Anéis", Genero = Genero.Fantasia},
+            new FilmeModel { Id = 2, Titulo = "Matrix", Genero = Genero.FiccaoCientifica },
+            new FilmeModel { Id = 3, Titulo = "Interestelar", Genero = Genero.FiccaoCientifica },
+            new FilmeModel { Id = 4, Titulo = "A Origem", Genero = Genero.FiccaoCientifica },
+            new FilmeModel { Id = 5, Titulo = "O Poderoso Chefão", Genero = Genero.Aventura}
         };
 
         [HttpGet]
         public ActionResult<List<FilmeModel>> GetFilmes()
         {
-            if(filmes == null || filmes.Count == 0)
+            if (filmes == null || filmes.Count == 0)
             {
                 return NotFound("Nenhum filme encontrado.");
             }
@@ -26,7 +29,7 @@ namespace TreinoAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        public ActionResult<FilmeModel>  GetFilmeById(int id)
+        public ActionResult<FilmeModel> GetFilmeById(int id)
         {
             FilmeModel filme = filmes.Find(f => f.Id == id);
 
@@ -34,21 +37,33 @@ namespace TreinoAPI.Controllers
             {
                 return Ok(filme);
             }
-            else
+
+            return NotFound($"Nenhum filme com id {id} encontrado.");
+        }
+
+        [HttpGet("genero/{genero}")]
+        public ActionResult<List<FilmeModel>> GetFilmesByGenero(Genero genero)
+        {
+            List<FilmeModel> filmesPorGenero = filmes.Where(f => f.Genero == genero).ToList();
+            if (filmesPorGenero == null || filmesPorGenero.Count == 0)
             {
-                return NotFound($"Nenhum filme com id {id} encontrado.");
+                return NotFound($"Nenhum filme encontrado com o gênero {genero}.");
             }
+            return Ok(filmesPorGenero);
         }
 
         [HttpPost]
-        public ActionResult<FilmeModel> PostFilme([FromBody]FilmeModel filme)
+        public ActionResult<FilmeModel> PostFilme([FromBody] FilmeModel filme)
         {
             if (filme == null)
             {
                 return BadRequest("Filme não pode ser nulo.");
             }
+
+            filme.Id = filmes.Count > 0 ? filmes.Max(f => f.Id) + 1 : 1;
+
             filmes.Add(filme);
-            return Ok("Filme criado com sucesso");
+            return CreatedAtAction(nameof(GetFilmeById), new { id = filme.Id }, filme);
         }
 
         [HttpPut("{id}")]
@@ -66,13 +81,12 @@ namespace TreinoAPI.Controllers
                 return NotFound($"Nenhum filme com id {id} encontrado.");
             }
 
-            filmeAntigo.Id = id; // Manter o ID original
             filmeAntigo.Titulo = filme.Titulo;
-            return Ok("Filme atualizado com sucesso");
+            return Ok(filmeAntigo);
         }
 
         [HttpDelete("{id}")]
-        public ActionResult DeleteFilme(int id)
+        public ActionResult<FilmeModel> DeleteFilme(int id)
         {
             FilmeModel filme = filmes.Find(f => f.Id == id);
 
@@ -80,12 +94,9 @@ namespace TreinoAPI.Controllers
             {
                 return NotFound($"Nenhum filme com id {id} encontrado.");
             }
-            else
-            {
-                filmes.Remove(filme);
-                return Ok("Filme deletado com sucesso");
-            }
 
+            filmes.Remove(filme);
+            return Ok(filme);
         }
     }
 }
